@@ -18,13 +18,14 @@ def gpg_signature_is_valid(
         path_to_data_file,
         fallback_keyserver_name
 ):
-    """ Validates a PGP signature for a data file. The detached signature is
-        provided as plaintext (UTF8) in the specified file.
+    """Validates a PGP signature for a data file.
 
-        If the discovered signing key is unknown to gpg on this system for the
-        invoking user, and if 'fallback_keyserver_name' is not None, an attempt
-        is made to import the key from the specified keyserver using its ID
-        after prompting the user for permission to import the key.
+    The detached signature must be provided as plaintext (UTF8) in the
+    specified signature file.
+    If the discovered signing key is unknown to gpg on this system for the
+    invoking user, and if 'fallback_keyserver_name' is not None, an attempt is
+    made to import the key from the specified keyserver using its ID after
+    prompting the user for permission to import the key.
 
     Parameters
     ----------
@@ -45,6 +46,7 @@ def gpg_signature_is_valid(
     False : bool
         If the signature is invalid or could not be validated.
     """
+
     path_to_signature_file = Path(path_to_signature_file)
     path_to_data_file = Path(path_to_data_file)
 
@@ -65,15 +67,15 @@ def gpg_signature_is_valid(
             f"Not a valid PGP signature file: '{path_to_signature_file}'."
         )
     else:
-        p.info(f"Signature mentions a key with ID "\
-              f"{verification.key_id} and fingerprint "\
-              f"{verification.fingerprint}."
-        )
+        p.info(f"Signature mentions a key with ID "
+               f"{verification.key_id} and fingerprint "
+               f"{verification.fingerprint}."
+               )
 
     if verification.valid:
-        p.ok(f"GPG signature is valid with trustlevel "\
-              f"'{verification.trust_level}'."
-        )
+        p.ok(f"GPG signature is valid with trustlevel "
+             f"'{verification.trust_level}'."
+             )
         return True
 
     # this case commonly occurrs when the GPG key has not been imported
@@ -84,7 +86,7 @@ def gpg_signature_is_valid(
         key_will_be_imported = None
         while key_will_be_imported is None:
             key_will_be_imported = userinput.prompt_yes_or_no(
-                f"[PROMPT] Do you want to import the GPG key from "\
+                f"[PROMPT] Do you want to import the GPG key from "
                 f"'{fallback_keyserver_name}'?"
             )
 
@@ -121,9 +123,9 @@ def gpg_signature_is_valid(
         )
 
     if verification.valid:
-        p.ok(f"GPG signature is valid with trustlevel "\
-              f"'{verification.trust_level}'."
-        )
+        p.ok(f"GPG signature is valid with trustlevel "
+             f"'{verification.trust_level}'."
+             )
         return True
     else:
         p.error("GPG signature is not valid!!!")

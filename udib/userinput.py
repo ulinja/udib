@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-""" This module is responsible for (interactive) user input handling. """
+"""This module provides functions for (interactive) user input handling."""
 
 import re
 
@@ -10,11 +10,11 @@ import clibella
 p = clibella.Printer()
 
 
-def prompt_yes_or_no(question, ask_until_valid = False):
-    """ Prompts the user with the specified yes/no question.
+def prompt_yes_or_no(question, ask_until_valid=False):
+    """Prompts the user for an answer to the specified yes/no question.
 
-        If 'ask_until_valid' is True, keeps repeating the prompt until the user
-        provides recognizable input to answer the question.
+    If 'ask_until_valid' is True, keeps repeating the prompt until the user
+    provides recognizable input to answer the question.
 
     Parameters
     ----------
@@ -35,10 +35,11 @@ def prompt_yes_or_no(question, ask_until_valid = False):
         If 'ask_until_valid' is False and the user has provided an ambiguous
         response to the prompt.
     """
+
     user_input_is_valid = False
 
     regex_yes = re.compile(r"^(y)$|^(Y)$|^(YES)$|^(Yes)$|^(yes)$")
-    regex_no  = re.compile(r"^(n)$|^(N)$|^(NO)$|^(No)$|^(no)$")
+    regex_no = re.compile(r"^(n)$|^(N)$|^(NO)$|^(No)$|^(no)$")
 
     while(not user_input_is_valid):
         user_input = p.input(f"{question} (Yes/No): ")

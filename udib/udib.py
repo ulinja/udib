@@ -3,6 +3,7 @@
 from pathlib import Path
 import subprocess
 
+
 def extract_iso(path_to_output_dir, path_to_input_file):
     """Extracts the input ISO-file into the specified directory using 'bsdtar'.
 
@@ -42,7 +43,7 @@ def extract_iso(path_to_output_dir, path_to_input_file):
     try:
         subprocess.run(["command", "-v", "bsdtar"], check=True)
     except subprocess.CalledProcessError:
-        raise RuntimeError(f"Program not found in $PATH: 'bsdtar'.")
+        raise RuntimeError("Program not found in $PATH: 'bsdtar'.")
 
     # extract file to destination
     try:

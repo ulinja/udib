@@ -5,6 +5,7 @@ import sys
 import colorama
 from colorama import Fore, Style
 
+
 class _Prefix:
     """The Prefix class represents text which is prepended to text output.
 
@@ -39,14 +40,16 @@ class _Prefix:
 
         return longest_prefix_length
 
-_prefix_info    = _Prefix("INFO", Fore.WHITE)
-_prefix_ok      = _Prefix("OK", Fore.GREEN)
+
+_prefix_info = _Prefix("INFO", Fore.WHITE)
+_prefix_ok = _Prefix("OK", Fore.GREEN)
 _prefix_success = _Prefix("SUCCESS", Fore.GREEN)
-_prefix_debug   = _Prefix("DEBUG", Fore.BLUE)
-_prefix_input  = _Prefix("PROMPT", Fore.CYAN)
+_prefix_debug = _Prefix("DEBUG", Fore.BLUE)
+_prefix_input = _Prefix("PROMPT", Fore.CYAN)
 _prefix_warning = _Prefix("WARNING", Fore.YELLOW)
-_prefix_error   = _Prefix("ERROR", Fore.RED)
+_prefix_error = _Prefix("ERROR", Fore.RED)
 _prefix_failure = _Prefix("FAILURE", Fore.RED)
+
 
 class Printer:
     """Printer objects print prefixed output to the specified output stream."""
@@ -98,7 +101,8 @@ class Printer:
 
         Printer._num_of_active_printers -= 1
 
-    def _print_prefixed_output(self, prefix, *args, color_enabled=True, **kwargs):
+    def _print_prefixed_output(self, prefix, *args, color_enabled=True,
+                               **kwargs):
         """Prints the output with the specified prefix prepended.
 
         This method works the same as the standard library print() function,

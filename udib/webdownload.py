@@ -2,9 +2,10 @@
 
 """This module downloads Debian Linux installation images from the web."""
 
-import os, re, subprocess, zipfile
+import os
+import re
+import subprocess
 from pathlib import Path
-from datetime import date
 
 import requests
 from bs4 import BeautifulSoup
@@ -17,9 +18,11 @@ import gpgverify
 p = clibella.Printer()
 
 
-def download_file(path_to_output_file, url_to_file, show_progress = False):
-    """ Downloads the file at the specified URL via HTTP and saves it as the
-        specified output file. Optionally, displays a nice status bar.
+def download_file(path_to_output_file, url_to_file, show_progress=False):
+    """Downloads the file at the input URL to the specified path.
+
+    The file is downloaded via HTTP/HTTPS and saved to the specified path.
+    Optionally, displays a nice status bar.
 
     Parameters
     ----------
@@ -70,18 +73,21 @@ def download_file(path_to_output_file, url_to_file, show_progress = False):
 
         p.ok(f"Received '{output_file_name}'.")
 
+
 def debian_obtain_image(path_to_output_dir):
-    """ Obtains the latest official debian installation image, the SHA512SUMS
-        file it is listed in, as well as the GPG signature for the SHA512SUMS
-        file.
+    """Downloads the latest debian installation image and its hashes.
 
-        File are obtained from the debian.org HTTPS mirrors and stored in the
-        specified directory. The obtained image is the FOSS-only, stable x64
-        build.
+    The image file, the SHA512SUMS file it is listed in, as well as the GPG
+    signature for the SHA512SUMS file are downloaded from the debian.org HTTPS
+    mirrors and written into the specified output directory.
+    The obtained image is for the FOSS-only, stable x64 build.
 
-        First, the GPG signature of the hash is validated. Then, the hash of
-        the image file is checked. If either check fails, an exception is
-        raised.
+    Once the image file is downloaded, the GPG signature of the hash is
+    validated. Then, the hash of the image file is verified. If either check
+    fails, an exception is raised.
+
+    If the verification suceeds, the hash file and GPG signature file are
+    removed again.
 
     Parameters
     ----------
@@ -115,29 +121,30 @@ def debian_obtain_image(path_to_output_dir):
         name="a",
         string=re.compile(r"debian-[0-9.]*-amd64-netinst.iso"))
     if len(image_file_links) != 1:
-        raise RuntimeError("Failed to find an exact match while looking for "\
-            "a link to the latest debian image file.")
+        raise RuntimeError("Failed to find an exact match while looking for "
+                           "a link to the latest debian image file."
+                           )
     image_file_name = image_file_links[0]['href']
     image_file_url = releases_url + image_file_name
 
     # download the SHA512SUMS file
-    download_file(path_to_output_dir / hash_file_name, hash_file_url)
+    download_file(path_to_output_dir/hash_file_name, hash_file_url)
     # download the GPG signature file
-    download_file(path_to_output_dir / signature_file_name, signature_file_url)
+    download_file(path_to_output_dir/signature_file_name, signature_file_url)
 
     # verify GPG signature of hash file
     if not gpgverify.gpg_signature_is_valid(
-            path_to_output_dir / signature_file_name,
-            path_to_output_dir / hash_file_name,
+            path_to_output_dir/signature_file_name,
+            path_to_output_dir/hash_file_name,
             "keyring.debian.org"
     ):
         raise RuntimeError("GPG signature verification failed!")
 
     # download the image file
-    download_file(path_to_output_dir / image_file_name, image_file_url, True)
+    download_file(path_to_output_dir/image_file_name, image_file_url, True)
 
     # remove unwanted lines from hash file
-    hash_file = open(path_to_output_dir / hash_file_name, "r")
+    hash_file = open(path_to_output_dir/hash_file_name, "r")
     hash_file_lines = hash_file.readlines()
     hash_file_lines_to_keep = []
     for line in hash_file_lines:
@@ -146,16 +153,16 @@ def debian_obtain_image(path_to_output_dir):
     hash_file.close()
     if len(hash_file_lines_to_keep) != 1:
         raise RuntimeError("Unexpected error while truncating hash file.")
-    os.remove(path_to_output_dir / hash_file_name)
-    with open(path_to_output_dir / hash_file_name, "w") as hash_file:
+    os.remove(path_to_output_dir/hash_file_name)
+    with open(path_to_output_dir/hash_file_name, "w") as hash_file:
         hash_file.writelines(hash_file_lines_to_keep)
 
     # validate SHA512 checksum
     p.info("Validating file integrity...")
     hash_check_result = subprocess.run(
-        ["sha512sum", "--check", path_to_output_dir / hash_file_name],
-        capture_output = True,
-        cwd = path_to_output_dir
+        ["sha512sum", "--check", path_to_output_dir/hash_file_name],
+        capture_output=True,
+        cwd=path_to_output_dir
     )
 
     stdout_lines = hash_check_result.stdout.decode("utf-8").split('\n')
@@ -177,9 +184,9 @@ def debian_obtain_image(path_to_output_dir):
 
     # clean up obsolete files
     p.info("Cleaning up files...")
-    os.remove(path_to_output_dir / hash_file_name)
-    os.remove(path_to_output_dir / signature_file_name)
+    os.remove(path_to_output_dir/hash_file_name)
+    os.remove(path_to_output_dir/signature_file_name)
 
     p.success("Debian image obtained.")
 
-    return str(path_to_output_dir / image_file_name)
+    return str(path_to_output_dir/image_file_name)
