@@ -7,7 +7,11 @@ from pathlib import Path
 import gnupg
 
 import userinput
-from printmsg import perror, pfailure, pinfo, pok, psuccess, pwarning
+import clibella
+
+
+p = clibella.Printer()
+
 
 def gpg_signature_is_valid(
         path_to_signature_file,
@@ -47,7 +51,7 @@ def gpg_signature_is_valid(
     gpg = gnupg.GPG()
     gpg.encoding = "utf-8"
 
-    pinfo("Validating signature...")
+    p.info("Validating signature...")
     with open(path_to_signature_file, "rb") as signature_file:
         verification = gpg.verify_file(
             signature_file,
@@ -61,20 +65,20 @@ def gpg_signature_is_valid(
             f"Not a valid PGP signature file: '{path_to_signature_file}'."
         )
     else:
-        pinfo(f"Signature mentions a key with ID "\
+        p.info(f"Signature mentions a key with ID "\
               f"{verification.key_id} and fingerprint "\
               f"{verification.fingerprint}."
         )
 
     if verification.valid:
-        pok(f"GPG signature is valid with trustlevel "\
+        p.ok(f"GPG signature is valid with trustlevel "\
               f"'{verification.trust_level}'."
         )
         return True
 
     # this case commonly occurrs when the GPG key has not been imported
     if verification.status == "no public key":
-        pwarning("Could not find the public GPG key locally!")
+        p.warning("Could not find the public GPG key locally!")
 
         # prompt user until answer is unambiguous
         key_will_be_imported = None
@@ -85,30 +89,30 @@ def gpg_signature_is_valid(
             )
 
             if key_will_be_imported is None:
-                perror("Unrecognized input. Please try again.")
+                p.error("Unrecognized input. Please try again.")
 
         if not key_will_be_imported:
-            pwarning("Aborting without importing key.")
+            p.warning("Aborting without importing key.")
             return False
 
         # import missing key
-        pinfo("Importing key...")
+        p.info("Importing key...")
         import_result = gpg.recv_keys(
             fallback_keyserver_name, verification.key_id
         )
 
         if import_result.count < 1:
-            perror("Failed to import key.")
+            p.error("Failed to import key.")
             return False
 
         # display some of gpg's output
         gpg_output = import_result.stderr.split('\n')
         for line in gpg_output:
             if line.startswith("gpg: "):
-                pinfo(f"{line}")
+                p.info(f"{line}")
 
     # validate signature again
-    pinfo("Validating signature...")
+    p.info("Validating signature...")
     with open(path_to_signature_file, "rb") as signature_file:
         verification = gpg.verify_file(
             signature_file,
@@ -117,10 +121,10 @@ def gpg_signature_is_valid(
         )
 
     if verification.valid:
-        pok(f"GPG signature is valid with trustlevel "\
+        p.ok(f"GPG signature is valid with trustlevel "\
               f"'{verification.trust_level}'."
         )
         return True
     else:
-        perror("GPG signature is not valid!!!")
+        p.error("GPG signature is not valid!!!")
         return False

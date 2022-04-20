@@ -4,7 +4,11 @@
 
 import re
 
-from printmsg import pinput
+import clibella
+
+
+p = clibella.Printer()
+
 
 def prompt_yes_or_no(question, ask_until_valid = False):
     """ Prompts the user with the specified yes/no question.
@@ -37,7 +41,7 @@ def prompt_yes_or_no(question, ask_until_valid = False):
     regex_no  = re.compile(r"^(n)$|^(N)$|^(NO)$|^(No)$|^(no)$")
 
     while(not user_input_is_valid):
-        user_input = pinput(f"{question} (Yes/No): ")
+        user_input = p.input(f"{question} (Yes/No): ")
 
         if (regex_yes.match(user_input)):
             return True
@@ -45,4 +49,3 @@ def prompt_yes_or_no(question, ask_until_valid = False):
             return False
         elif (not ask_until_valid):
             return None
-

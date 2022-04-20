@@ -10,8 +10,12 @@ import requests
 from bs4 import BeautifulSoup
 from tqdm import tqdm
 
-from printmsg import perror, pfailure, pinfo, pok, psuccess, pwarning
+import clibella
 import gpgverify
+
+
+p = clibella.Printer()
+
 
 def download_file(path_to_output_file, url_to_file, show_progress = False):
     """ Downloads the file at the specified URL via HTTP and saves it as the
@@ -40,7 +44,7 @@ def download_file(path_to_output_file, url_to_file, show_progress = False):
 
     output_file_name = path_to_output_file.name
     with open(path_to_output_file, "wb") as output_file:
-        pinfo(f"Downloading '{output_file_name}'...")
+        p.info(f"Downloading '{output_file_name}'...")
         file_response = requests.get(url_to_file, stream=True)
         total_length = file_response.headers.get('content-length')
 
@@ -64,7 +68,7 @@ def download_file(path_to_output_file, url_to_file, show_progress = False):
             if (show_progress):
                 progress_bar.close()
 
-        pok(f"Received '{output_file_name}'.")
+        p.ok(f"Received '{output_file_name}'.")
 
 def debian_obtain_image(path_to_output_dir):
     """ Obtains the latest official debian installation image, the SHA512SUMS
@@ -90,7 +94,7 @@ def debian_obtain_image(path_to_output_dir):
         Full path to the obtained and validated image file.
     """
 
-    pinfo("Obtaining and verifying the latest Debian stable image...")
+    p.info("Obtaining and verifying the latest Debian stable image...")
 
     path_to_output_dir = Path(path_to_output_dir)
 
@@ -147,7 +151,7 @@ def debian_obtain_image(path_to_output_dir):
         hash_file.writelines(hash_file_lines_to_keep)
 
     # validate SHA512 checksum
-    pinfo("Validating file integrity...")
+    p.info("Validating file integrity...")
     hash_check_result = subprocess.run(
         ["sha512sum", "--check", path_to_output_dir / hash_file_name],
         capture_output = True,
@@ -160,22 +164,22 @@ def debian_obtain_image(path_to_output_dir):
     if len(stdout_lines) > 0:
         for line in stdout_lines:
             if len(line) > 0:
-                pinfo(f"{line}")
+                p.info(f"{line}")
 
     if hash_check_result.returncode != 0:
         if len(stderr_lines) > 0:
             for line in stderr_lines:
                 if len(line) > 0:
-                    perror(f"{line}")
+                    p.error(f"{line}")
         raise RuntimeError("SHA512 validation failed.")
 
-    pok("File integrity checks passed.")
+    p.ok("File integrity checks passed.")
 
     # clean up obsolete files
-    pinfo("Cleaning up files...")
+    p.info("Cleaning up files...")
     os.remove(path_to_output_dir / hash_file_name)
     os.remove(path_to_output_dir / signature_file_name)
 
-    psuccess("Debian image obtained.")
+    p.success("Debian image obtained.")
 
     return str(path_to_output_dir / image_file_name)
