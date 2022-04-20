@@ -48,8 +48,8 @@ def download_file(path_to_output_file, url_to_file, show_progress = False):
         file_response = requests.get(url_to_file, stream=True)
         total_length = file_response.headers.get('content-length')
 
-        if total_length is None: # no content length header
-            output_file.write(response.content)
+        if total_length is None:  # no content length header
+            output_file.write(file_response.content)
         else:
             if (show_progress):
                 total_length = int(total_length)
