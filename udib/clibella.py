@@ -1,4 +1,4 @@
-"""This module provides classes and methods for pretty console output."""
+"""Library for consistent and visually appealing terminal output."""
 
 import sys
 

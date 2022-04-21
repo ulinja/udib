@@ -1,6 +1,4 @@
-#!/usr/bin/env python3
-
-"""This module provides functions for (interactive) user input handling."""
+"""Library for consistent interactive user input capturing."""
 
 import re
 

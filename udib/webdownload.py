@@ -1,6 +1,10 @@
-#!/usr/bin/env python3
+"""Library for downloading files from the web.
 
-"""This module downloads Debian Linux installation images from the web."""
+Specifically, debian installation images and any accompanying files
+required for verification of authenticity and integrity of the
+obtained images.
+
+"""
 
 import os
 import re

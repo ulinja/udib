@@ -1,6 +1,4 @@
-#!/usr/bin/env python3
-
-""" This module validates GPG signatures for downloaded files. """
+"""Library for verification of GPG signatures."""
 
 from pathlib import Path
 
