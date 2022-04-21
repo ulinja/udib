@@ -12,52 +12,6 @@ import re
 import subprocess
 
 
-# contains the names of all dependencies (unix programs) which must be
-# installed on the local system and available in the local system's $PATH
-# in order for all functions in this module to work
-system_programs_required = [
-    "bsdtar",
-    "chmod",
-    "cpio",
-    "dd",
-    "find",
-    "gunzip",
-    "gzip",
-    "md5sum",
-    "xargs",
-    "xorriso",
-]
-
-
-class MissingDependencyError(RuntimeError):
-    """Raised when a dependency is missing on the local system."""
-
-    pass
-
-
-def assert_system_dependencies_installed():
-    """Asserts that all system dependencies are installed.
-
-    System dependencies are those programs whose names are listed in
-    the global 'system_programs_required' variable.
-
-    Raises
-    ------
-    MissingDependencyError
-        Raised when a required program is not accessible in the system
-        $PATH.
-
-    """
-
-    for program_name in system_programs_required:
-        try:
-            subprocess.run(["command", "-v", program_name], check=True)
-        except subprocess.CalledProcessError:
-            raise MissingDependencyError(
-                f"Program not installed or not in $PATH: "
-                f"'{program_name}'.")
-
-
 def extract_iso(path_to_output_dir, path_to_input_file):
     """Extracts the input ISO-file into the specified directory using 'bsdtar'.
 
@@ -295,8 +249,8 @@ def extract_mbr_from_iso(path_to_output_file, path_to_source_iso):
     # FIXME do this in python, dd is too dangerous
     try:
         subprocess.run(
-            ["dd", f"if={path_to_source_iso}", "bs=1", "count=432",
-             f"of={path_to_output_file}"],
+            ["dd", f"if={path_to_source_iso.resolve()}", "bs=1", "count=432",
+             f"of={path_to_output_file.resolve()}"],
             shell=True,
             check=True)
 

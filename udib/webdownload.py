@@ -104,6 +104,7 @@ def debian_obtain_image(path_to_output_dir):
         Full path to the obtained and validated image file.
     """
 
+    # FIXME download files to a temporary directory
     p.info("Obtaining and verifying the latest Debian stable image...")
 
     path_to_output_dir = Path(path_to_output_dir)
@@ -193,4 +194,4 @@ def debian_obtain_image(path_to_output_dir):
 
     p.success("Debian image obtained.")
 
-    return str(path_to_output_dir/image_file_name)
+    return path_to_output_dir/image_file_name
