@@ -200,6 +200,9 @@ def main():
     else:
         # modify image file using specified preseed file
         path_to_preseed_file = Path(args.existing_preseed_file)
+        if not path_to_preseed_file.is_file():
+            p.error(f"No such file: '{path_to_preseed_file}'.")
+            sys.exit(1)
 
         if args.path_to_existing_image:
             # user has specified an existing image file
@@ -227,15 +230,14 @@ def main():
         # extract image MBR to a temporary directory
         p.info("Extracting master boot record...")
         path_to_mbr = Path(tempfile.mkdtemp())/"mbr.bin"
-        # FIXME fix MBR extraction
-        #modiso.extract_mbr_from_iso(
-        #    path_to_mbr,
-        #    path_to_image_file)
+        modiso.extract_mbr_from_iso(
+            path_to_mbr,
+            path_to_image_file)
 
         # append preseed file to extracted initrd
         p.info("Appending preseed file...")
         modiso.append_file_contents_to_initrd_archive(
-            path_to_extracted_iso_dir,
+            path_to_extracted_iso_dir/"install.amd"/"initrd.gz",
             path_to_preseed_file)
 
         # regenerate md5sum.txt

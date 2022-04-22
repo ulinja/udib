@@ -246,17 +246,9 @@ def extract_mbr_from_iso(path_to_output_file, path_to_source_iso):
             f"Input file is not an image file: '{path_to_source_iso}'.")
 
     # extract the MBR (first 432 Bytes) of the source ISO file
-    # FIXME do this in python, dd is too dangerous
-    try:
-        subprocess.run(
-            ["dd", f"if={path_to_source_iso.resolve()}", "bs=1", "count=432",
-             f"of={path_to_output_file.resolve()}"],
-            shell=True,
-            check=True)
-
-    except subprocess.CalledProcessError:
-        raise RuntimeError(f"Failed while extracting MBR from source file: "
-                           f"'{path_to_source_iso}'.")
+    with open(path_to_source_iso, mode="r+b") as iso_file:
+        with open(path_to_output_file, mode="w+b") as mbr_file:
+            mbr_file.write(iso_file.read(432))
 
 
 def repack_iso(path_to_output_iso,
