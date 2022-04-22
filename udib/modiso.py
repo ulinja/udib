@@ -9,9 +9,47 @@ local filesystem.
 
 from pathlib import Path
 import gzip
+import hashlib
 import re
 import shutil
 import subprocess
+
+
+def _find_all_files_under(parent_dir):
+    """Recursively finds all files anywhere under the specified directory.
+
+    Returns a list of absolute Path objects. Symlinks are ignored.
+
+    Parameters
+    ----------
+    parent_dir : str or pathlike object
+        The directory under which to recursively find files.
+
+    Raises
+    ------
+    NotADirectoryError
+        Raised if the specified parent directory is not a directory.
+
+    Examples
+    --------
+    config_files = _find_all_files_under("~/.config")
+
+    """
+
+    parent_dir = Path(parent_dir).resolve()
+
+    if not parent_dir.is_dir():
+        raise NotADirectoryError(f"No such directory: '{parent_dir}'.")
+
+    files = []
+
+    for subpath in parent_dir.iterdir():
+        if subpath.is_file():
+            files.append(subpath.resolve())
+        elif not subpath.is_symlink() and subpath.is_dir():
+            files += _find_all_files_under(subpath)
+
+    return files
 
 
 def extract_iso(path_to_output_dir, path_to_input_file):
@@ -174,7 +212,7 @@ def regenerate_iso_md5sums_file(path_to_extracted_iso_root):
 
     """
 
-    path_to_extracted_iso_root = Path(path_to_extracted_iso_root)
+    path_to_extracted_iso_root = Path(path_to_extracted_iso_root).resolve()
 
     # check if input path exists
     if not path_to_extracted_iso_root.is_dir():

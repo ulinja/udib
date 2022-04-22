@@ -36,14 +36,7 @@ def _assert_system_dependencies_installed():
     # contains the names of all unix program dependencies which must be
     # installed on the local system and available in the local system's $PATH
     system_programs_required = [
-        "chmod",
         "cpio",
-        "dd",
-        "find",
-        "gunzip",
-        "gzip",
-        "md5sum",
-        "xargs",
         "xorriso",
     ]
 
@@ -108,6 +101,55 @@ def _get_argument_parser():
         action="store")
 
     return parser
+
+
+def _chmod_recursively(input_path, mode):
+    """Recursively changes file permissions on the specified path.
+
+    The file and directory permissions for the specified path itself,
+    as well as any files and directories anywhere below it are set to
+    the specified mode.
+    Symlinks are ignored.
+
+    Parameters
+    ----------
+    input_path : str or pathlike object
+        Path of which to change the permissions recursively.
+    mode : int
+        Permission mode as accepted by os.chmod()
+
+    Raises
+    ------
+    ValueError
+        Raised if the specified path points to a nonexisting
+        filesystem node, or if the specified permission mode is
+        invalid.
+    TypeError
+        Raised if mode is not an integer.
+
+    Examples
+    --------
+    _chmod_recursively("/tmp/mydir", 0o755)
+
+    """
+
+    input_path = Path(input_path)
+
+    if not input_path.exists():
+        raise ValueError(f"Path does not exist: '{input_path}'.")
+
+    if not isinstance(mode, int):
+        raise TypeError("Expected type 'int' for parameter 'mode'.")
+    if mode not in range(0, 0o1000):
+        raise ValueError("Invalid mode.")
+
+    if not input_path.is_symlink():
+        input_path.chmod(mode)
+    for child in input_path.iterdir():
+        if not child.is_symlink():
+            child.chmod(mode)
+        if child.is_dir():
+            _chmod_recursively(child, mode)
 
 
 def main():
@@ -270,7 +312,9 @@ def main():
 
         # remove temporary directories
         p.info("Cleaning up...")
+        _chmod_recursively(path_to_extracted_iso_dir, 0o755)
         shutil.rmtree(path_to_extracted_iso_dir)
+        _chmod_recursively(path_to_mbr.parent, 0o755)
         shutil.rmtree(path_to_mbr.parent)
 
         p.success(f"Wrote the modified ISO to '{path_to_output_file}'.")
