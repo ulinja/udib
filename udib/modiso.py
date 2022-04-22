@@ -8,7 +8,9 @@ local filesystem.
 """
 
 from pathlib import Path
+import gzip
 import re
+import shutil
 import subprocess
 
 
@@ -110,33 +112,41 @@ def append_file_contents_to_initrd_archive(path_to_initrd_archive,
     if not path_to_input_file.is_file():
         raise FileNotFoundError(f"No such file: '{path_to_input_file}'.")
 
-    # temporarily extract initrd archive and append the input file's contents
+    # make archive and its parent directory temporarily writable
+    path_to_initrd_archive.chmod(0o644)
+    path_to_initrd_archive.parent.chmod(0o644)
+
+    path_to_initrd_extracted = path_to_initrd_archive.with_suffix("")
+
+    # extract archive in-place
+    with gzip.open(path_to_initrd_archive, "rb") as file_gz:
+        with open(path_to_initrd_extracted) as file_raw:
+            shutil.copyfileobj(file_gz, file_raw)
+    path_to_initrd_archive.unlink()
+
     try:
-        # make archive temporarily writable
-        subprocess.run(["chmod", "+w", path_to_initrd_archive],
-                       check=True)
-        # extract archive in-place
-        subprocess.run(["gunzip", path_to_initrd_archive],
-                       check=True)
         # append contents of input_file to extracted archive using cpio
         subprocess.run(
             ["echo", path_to_input_file,
              "|", "cpio", "-H", "newc", "-o", "-A",
-             "-F", path_to_initrd_archive.with_suffix("")],
+             "-F", path_to_initrd_extracted],
             shell=True,
             check=True)
-        # repack archive
-        subprocess.run(
-            ["gzip", path_to_initrd_archive.with_suffix("")],
-            check=True)
-        # remove write permissions from repacked archive
-        subprocess.run(["chmod", "-w", path_to_initrd_archive],
-                       check=True)
 
     except subprocess.CalledProcessError:
         raise RuntimeError(f"Failed while appending contents of "
                            f"'{path_to_input_file}' to "
                            f"'{path_to_initrd_archive}'.")
+
+    # repack archive
+    with gzip.open(path_to_initrd_archive, "wb") as file_gz:
+        with open(path_to_initrd_extracted, "rb") as file_raw:
+            shutil.copyfileobj(file_raw, file_gz)
+    path_to_initrd_extracted.unlink()
+
+    # revert write permissions from repacked archive and its parent dir
+    path_to_initrd_archive.chmod(0o444)
+    path_to_initrd_archive.parent.chmod(0o444)
 
 
 def regenerate_iso_md5sums_file(path_to_extracted_iso_root):
@@ -171,28 +181,30 @@ def regenerate_iso_md5sums_file(path_to_extracted_iso_root):
         raise NotADirectoryError(f"No such directory: "
                                  f"'{path_to_extracted_iso_root}'.")
 
-    # recalculate and rewrite 'md5sum.txt' in ISO's root
+    path_to_md5sum_file = path_to_extracted_iso_root/"md5sum.txt"
+
+    # make md5sum file and its parent dir temporarily writable
+    path_to_md5sum_file.chmod(0o644)
+    path_to_md5sum_file.parent.chmod(0o644)
+
     try:
-        # make md5sum.txt temporarily writable
-        subprocess.run(
-            ["chmod", "+w", path_to_extracted_iso_root/"md5sum.txt"],
-            check=True)
         # find all files within ISO's root and regenerate md5sum.txt file
         subprocess.run(
             ["find", path_to_extracted_iso_root,
              "-follow", "-type", "f", "!", "-name", "md5sum.txt", "-print0"
              "|", "xargs", "-0", "md5sum",
-             ">", path_to_extracted_iso_root/"md5sum.txt"],
+             ">", path_to_md5sum_file],
             shell=True,
             check=True)
-        # remove write permissions from md5sum.txt
-        subprocess.run(
-            ["chmod", "-w", path_to_extracted_iso_root/"md5sum.txt"],
-            check=True)
+
     except subprocess.CalledProcessError:
         raise RuntimeError(f"Failed while regenerating "
                            f"'md5sum.txt' within "
                            f"'{path_to_extracted_iso_root}'.")
+
+    # revert write permissions from md5sum.txt and its parent dir
+    path_to_md5sum_file.chmod(0o444)
+    path_to_md5sum_file.parent.chmod(0o444)
 
 
 def extract_mbr_from_iso(path_to_output_file, path_to_source_iso):
