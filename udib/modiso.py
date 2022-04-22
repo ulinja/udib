@@ -13,15 +13,15 @@ import subprocess
 
 
 def extract_iso(path_to_output_dir, path_to_input_file):
-    """Extracts the input ISO-file into the specified directory using 'bsdtar'.
+    """Extracts the contents of the ISO-file into the specified directory.
 
     Source: https://wiki.debian.org/DebianInstaller/Preseed/EditIso#Extracting_the_Initrd_from_an_ISO_Image
 
     Parameters
     ----------
     path_to_output_dir : str or pathlike object
-        Path to the directory into which the contents of the archive will be
-        extracted.
+        Path to the directory into which the contents of the ISO archive will
+        be extracted.
     path_to_input_file : str or pathlike object
         Path to the file/archive which should be extracted.
 
@@ -51,18 +51,16 @@ def extract_iso(path_to_output_dir, path_to_input_file):
     try:
         subprocess.run(
             [
-                "bsdtar",
-                "-C",
-                str(path_to_output_dir),
-                "-xf",
-                str(path_to_input_file)
+                "xorriso",
+                "-osirrox", "on"
+                "-indev", path_to_input_file.resolve(),
+                "-extract", "/",
+                path_to_output_dir.resolve()
             ],
-            check=True
-        )
+            check=True)
     except subprocess.CalledProcessError:
         raise RuntimeError(
-            f"An error occurred while extracting '{path_to_input_file}'."
-        )
+            f"An error occurred while extracting '{path_to_input_file}'.")
 
 
 def append_file_contents_to_initrd_archive(path_to_initrd_archive,

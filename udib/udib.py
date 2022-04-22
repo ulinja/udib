@@ -36,7 +36,6 @@ def _assert_system_dependencies_installed():
     # contains the names of all unix program dependencies which must be
     # installed on the local system and available in the local system's $PATH
     system_programs_required = [
-        "bsdtar",
         "chmod",
         "cpio",
         "dd",
