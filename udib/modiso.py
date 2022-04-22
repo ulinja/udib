@@ -54,7 +54,7 @@ def extract_iso(path_to_output_dir, path_to_input_file):
         subprocess.run(
             [
                 "xorriso",
-                "-osirrox", "on"
+                "-osirrox", "on",
                 "-indev", path_to_input_file.resolve(),
                 "-extract", "/",
                 path_to_output_dir.resolve()
@@ -114,22 +114,22 @@ def append_file_contents_to_initrd_archive(path_to_initrd_archive,
 
     # make archive and its parent directory temporarily writable
     path_to_initrd_archive.chmod(0o644)
-    path_to_initrd_archive.parent.chmod(0o644)
+    path_to_initrd_archive.parent.chmod(0o755)
 
     path_to_initrd_extracted = path_to_initrd_archive.with_suffix("")
 
     # extract archive in-place
     with gzip.open(path_to_initrd_archive, "rb") as file_gz:
-        with open(path_to_initrd_extracted) as file_raw:
+        with open(path_to_initrd_extracted, "wb") as file_raw:
             shutil.copyfileobj(file_gz, file_raw)
     path_to_initrd_archive.unlink()
 
     try:
         # append contents of input_file to extracted archive using cpio
         subprocess.run(
-            ["echo", path_to_input_file,
+            ["echo", str(path_to_input_file.resolve()),
              "|", "cpio", "-H", "newc", "-o", "-A",
-             "-F", path_to_initrd_extracted],
+             "-F", str(path_to_initrd_extracted.resolve())],
             shell=True,
             check=True)
 
@@ -146,7 +146,7 @@ def append_file_contents_to_initrd_archive(path_to_initrd_archive,
 
     # revert write permissions from repacked archive and its parent dir
     path_to_initrd_archive.chmod(0o444)
-    path_to_initrd_archive.parent.chmod(0o444)
+    path_to_initrd_archive.parent.chmod(0o555)
 
 
 def regenerate_iso_md5sums_file(path_to_extracted_iso_root):
@@ -185,26 +185,34 @@ def regenerate_iso_md5sums_file(path_to_extracted_iso_root):
 
     # make md5sum file and its parent dir temporarily writable
     path_to_md5sum_file.chmod(0o644)
-    path_to_md5sum_file.parent.chmod(0o644)
+    path_to_md5sum_file.parent.chmod(0o755)
 
-    try:
-        # find all files within ISO's root and regenerate md5sum.txt file
-        subprocess.run(
-            ["find", path_to_extracted_iso_root,
-             "-follow", "-type", "f", "!", "-name", "md5sum.txt", "-print0"
-             "|", "xargs", "-0", "md5sum",
-             ">", path_to_md5sum_file],
-            shell=True,
-            check=True)
+    # remove original md5sum.txt
+    path_to_md5sum_file.unlink()
 
-    except subprocess.CalledProcessError:
-        raise RuntimeError(f"Failed while regenerating "
-                           f"'md5sum.txt' within "
-                           f"'{path_to_extracted_iso_root}'.")
+    # create a new md5sum file:
+    # structure: '<md5_hash>  path/to/file/relative/to/iso_root'
+    # with one line per file, for each file anywhere under the ISO root folder.
+    # Note the two spaces between hash and filepath!
+
+    # find all files
+    subpaths = _find_all_files_under(path_to_extracted_iso_root)
+
+    with open(path_to_md5sum_file, "w") as md5sum_file:
+        for subpath in subpaths:
+            md5hash = hashlib.md5()
+            with open(subpath, "rb") as file:
+                # calculate md5 hash
+                md5hash.update(file.read())
+            md5sum_file.write(
+                md5hash.hexdigest()
+                + "  "
+                + str(subpath.relative_to(path_to_extracted_iso_root))
+                + "\n")
 
     # revert write permissions from md5sum.txt and its parent dir
     path_to_md5sum_file.chmod(0o444)
-    path_to_md5sum_file.parent.chmod(0o444)
+    path_to_md5sum_file.parent.chmod(0o555)
 
 
 def extract_mbr_from_iso(path_to_output_file, path_to_source_iso):
@@ -341,16 +349,16 @@ def repack_iso(path_to_output_iso,
         subprocess.run(
             ["xorriso", "-as", "mkisofs",
              "-r", "-V", created_iso_filesystem_name,
-             "-o", path_to_output_iso,
+             "-o", path_to_output_iso.resolve(),
              "-J", "-J", "-joliet-long", "-cache-inodes",
-             "-isohybrid-mbr", path_to_mbr_data_file,
+             "-isohybrid-mbr", path_to_mbr_data_file.resolve(),
              "-b", "isolinux/isolinux.bin",
              "-c", "isolinux/boot.cat",
              "-boot-load-size", "4", "-boot-info-table", "-no-emul-boot",
              "-eltorito-alt-boot",
              "-e", "boot/grub/efi.img", "-no-emul-boot",
              "-isohybrid-gpt-basdat", "-isohybrid-apm-hfsplus",
-             path_to_input_files_root_dir],
+             path_to_input_files_root_dir.resolve()],
             check=True)
 
     except subprocess.CalledProcessError:
