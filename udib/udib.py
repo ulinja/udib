@@ -37,6 +37,7 @@ def _assert_system_dependencies_installed():
     # installed on the local system and available in the local system's $PATH
     system_programs_required = [
         "cpio",
+        "gpg",
         "xorriso",
     ]
 

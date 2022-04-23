@@ -2,7 +2,7 @@
 
 =UDIB= is the /unattended debian installation (image) builder/.
 As the name would suggest, it is a tool which builds a debian installation image which, if used to boot from, installs the *latest stable release* of Debian Linux to the machine without any user interaction required whatsoever.
-Configuration of the installed system takes place while building the image using =UDIB=.
+Configuration of the installed system is done by editing preseed files.
 
 ** Prerequisites
 
@@ -25,6 +25,9 @@ Any target machine on which you wish to install Debian using images built using 
     
 - =gpg= /(2.2.32 known to work)/
 
+- GNU =cpio=
+  - preinstalled on most distributions
+
 Internet access is required so that =UDIB= can download the Debian installation image.
 
 ** How it works
@@ -34,9 +37,8 @@ Internet access is required so that =UDIB= can download the Debian installation 
 1. download the latest debian stable installation ISO
 2. verify integrity and authenticity of the obtained ISO
 3. extract the ISO
-4. interactively build a preseed configuration for the debian installer
-5. inject the preseed configuration into the ISO's initrd
-6. repack the modified ISO
+4. inject the preseed configuration into the ISO's initrd
+5. repack the modified ISO
 
 *** Preseeding
 
