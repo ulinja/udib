@@ -97,6 +97,7 @@ def extract_iso(path_to_output_dir, path_to_input_file):
                 "-extract", "/",
                 path_to_output_dir.resolve()
             ],
+            capture_output=True,
             check=True)
     except subprocess.CalledProcessError:
         raise RuntimeError(
@@ -164,12 +165,17 @@ def append_file_contents_to_initrd_archive(path_to_initrd_archive,
 
     try:
         # append contents of input_file to extracted archive using cpio
-        subprocess.run(
-            ["echo", str(path_to_input_file.resolve()),
-             "|", "cpio", "-H", "newc", "-o", "-A",
-             "-F", str(path_to_initrd_extracted.resolve())],
-            shell=True,
-            check=True)
+        # NOTE cpio must be called from within the input file's parent
+        # directory, and the input file's name is piped into it
+        completed_process = subprocess.Popen(
+            ["cpio", "-H", "newc", "-o", "-A",
+                "-F", str(path_to_initrd_extracted.resolve())],
+            cwd=path_to_input_file.resolve().parent,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE)
+        completed_process.communicate(
+            input=str(path_to_input_file.name).encode())
 
     except subprocess.CalledProcessError:
         raise RuntimeError(f"Failed while appending contents of "
@@ -397,6 +403,7 @@ def repack_iso(path_to_output_iso,
              "-e", "boot/grub/efi.img", "-no-emul-boot",
              "-isohybrid-gpt-basdat", "-isohybrid-apm-hfsplus",
              path_to_input_files_root_dir.resolve()],
+            capture_output=True,
             check=True)
 
     except subprocess.CalledProcessError:

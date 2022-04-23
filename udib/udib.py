@@ -155,7 +155,7 @@ def _chmod_recursively(input_path, mode):
 def main():
 
     # FIXME capture ISO filesystem name
-    iso_filesystem_name = "Debian 11.3.0 UDIB"
+    iso_filesystem_name = "Debian UDIB"
 
     parser = _get_argument_parser()
     args = parser.parse_args()
@@ -277,9 +277,13 @@ def main():
 
         # append preseed file to extracted initrd
         p.info("Appending preseed file...")
-        modiso.append_file_contents_to_initrd_archive(
-            path_to_extracted_iso_dir/"install.amd"/"initrd.gz",
-            path_to_preseed_file)
+        # make a temporary copy called 'preseed.cfg'
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path_to_renamed_preseed_file = Path(tmpdir).resolve()/"preseed.cfg"
+            shutil.copy(path_to_preseed_file, path_to_renamed_preseed_file)
+            modiso.append_file_contents_to_initrd_archive(
+                path_to_extracted_iso_dir/"install.amd"/"initrd.gz",
+                path_to_renamed_preseed_file)
 
         # regenerate md5sum.txt
         p.info("Regenerating MD5 checksum...")
