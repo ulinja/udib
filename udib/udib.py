@@ -63,29 +63,10 @@ def _get_argument_parser():
 
     """
 
-    # FIXME add a group hierarchy
     # FIXME capture ISO filesystem name
 
     parser = argparse.ArgumentParser()
 
-    # create a group of mutually exclusive arguments
-    mutually_exclusive_group = parser.add_mutually_exclusive_group(
-        required=True)
-    mutually_exclusive_group.add_argument(
-        "--get-image",
-        help="Download the latest, unmodified Debian image and exit.",
-        action="store_true")
-    mutually_exclusive_group.add_argument(
-        "--get-preseed-file",
-        help="Download the latest Debian preseed example file and exit.",
-        action="store_true")
-    mutually_exclusive_group.add_argument(
-        "-p",
-        "--existing-preseed-file",
-        help="Path to the preseed configuration file to use.",
-        action="store")
-
-    # add all other arguments
     parser.add_argument(
         "-o",
         "--output-file",
@@ -93,10 +74,31 @@ def _get_argument_parser():
         type=str,
         dest="path_to_output_file",
         action="store")
-    parser.add_argument(
+
+    subparsers = parser.add_subparsers(required=True)
+
+    parser_get = subparsers.add_parser("get")
+    parser_get.add_argument(
+        "WHAT",
+        type=str,
+        action="store",
+        help="What to retrieve (the latest installation image or the latest " \
+        "preseed file).",
+        choices=["image", "preseed-file"])
+
+    parser_insert = subparsers.add_parser("insert")
+    parser_insert.add_argument(
+        "FILES",
+        nargs="+",
+        type=str,
+        help="A list of files to insert into the root of an installation " \
+        "image.",
+        action="store")
+    parser_insert.add_argument(
         "-i",
         "--existing-image",
-        help="Use an existing debian image file, do not download a new one.",
+        help="Insert into an existing debian image file, instead of " \
+        "downloading a new one.",
         type=str,
         dest="path_to_existing_image",
         action="store")
@@ -157,6 +159,8 @@ def main():
 
     # FIXME capture ISO filesystem name
     iso_filesystem_name = "Debian UDIB"
+
+    # FIXME adjust to new parser namespace
 
     parser = _get_argument_parser()
     args = parser.parse_args()

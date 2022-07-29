@@ -4,6 +4,14 @@
 As the name would suggest, it is a tool which builds a debian installation image which, if used to boot from, installs the *latest stable release* of Debian Linux to the machine without any user interaction required whatsoever.
 Configuration of the installed system is done by editing preseed files.
 
+** Usage
+
+Obtaining a preseed example file:
+
+#+begin_src shell
+  ./udib.py get preseed-file
+#+end_src
+
 ** Prerequisites
 
 *** Target machine
