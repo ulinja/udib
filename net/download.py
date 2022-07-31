@@ -46,7 +46,9 @@ def download_file(
         )
 
     if printer is None:
-        p= Printer()
+        p = Printer()
+    else:
+        p = printer
 
     output_file_name = path_to_output_file.name
     with open(path_to_output_file, "wb") as output_file:

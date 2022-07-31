@@ -29,21 +29,22 @@ UDIB ships with a `default-preseedfile.txt` which provides a fully automated Deb
 You can adjust it to your needs in order to customize your installation.
 If you don't want to modify UDIB's default preseed file but would rather create your own from scratch, you can retrieve Debian's example preseed file using UDIB:
 
-```bash
-udib.py get WHAT [--output-file FILE | --output-dir DIR]
+```
+udib.py [--output-file FILE | --output-dir DIR] get WHAT
 ```
 
 `WHAT` can be either one of:
 
-- `preseedfile` to download Debian's example preseed file
+- `preseed-file-basic` to download Debian's basic example preseed file (sufficient in most cases)
+- `preseed-file-full` to download Debian's full example preseed file (there are a LOT of options)
 - `iso` to download the latest, unmodified Debian stable x86-64 netinst ISO
 
 ## Creating a preseeded ISO
 
 To inject an existing preseed file into an ISO, you can run the following command:
 
-```bash
-udib.py inject PRESEEDFILE [--image-file IMAGEFILE] [--output-file FILE | --output-dir DIR]
+```
+udib.py [--output-file FILE | --output-dir DIR] inject PRESEEDFILE [--image-file IMAGEFILE]
 ```
 
 where `PRESEEDFILE` is the path to your preseed file.

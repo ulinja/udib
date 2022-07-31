@@ -13,8 +13,10 @@ import hashlib
 import re
 import shutil
 import subprocess
+from tempfile import TemporaryDirectory
 
 from core.utils import find_all_files_under
+from cli.clibella import Printer
 
 
 def extract_iso(path_to_output_dir, path_to_input_file):
@@ -408,3 +410,115 @@ def repack_iso(path_to_output_iso,
     except subprocess.CalledProcessError:
         raise RuntimeError(f"Failed while repacking ISO from source files: "
                            f"'{path_to_input_files_root_dir}'.")
+
+
+def inject_preseed_file_into_iso(
+        path_to_output_iso_file,
+        path_to_input_iso_file,
+        path_to_input_preseed_file,
+        iso_filesystem_name="Debian",
+        printer=None,
+):
+    """Injects the specified preseed file into the specified ISO file.
+
+    Extracts the input ISO into a temporary directory, then extracts the input
+    ISO's MBR into a temporary file, then appends the preseed file to the
+    extracted ISO's initrd, then regenerates the extracted ISO's internal MD5
+    hash list and finally repacks the extracted ISO into the output ISO.
+
+    The input ISO file itself is left unchanged.
+    The output ISO file is newly created.
+
+    Parameters
+    ----------
+    path_to_output_iso_file : str or pathlike object
+        Path to which the resulting ISO file will be saved.
+    path_to_input_iso_file : str or pathlike object
+        Path to the origin ISO file.
+    path_to_input_preseed_file : str or pathlike object
+        Path to the input preseed file.
+    printer : clibella.Printer
+        A printer for CLI output.
+    """
+
+    # verify and resolve paths
+    if "~" in str(path_to_input_iso_file):
+        path_to_input_iso_file = Path(path_to_input_iso_file).expanduser()
+    path_to_input_iso_file = Path(path_to_input_iso_file).resolve()
+    if not path_to_input_iso_file.is_file():
+        raise FileNotFoundError(f"No such file: '{path_to_input_iso_file}'.")
+
+    if "~" in str(path_to_output_iso_file):
+        path_to_output_iso_file = Path(path_to_output_iso_file).expanduser()
+    path_to_output_iso_file = Path(path_to_output_iso_file).resolve()
+    if path_to_output_iso_file.is_file():
+        raise FileExistsError(f"Output file exists: '{path_to_input_iso_file}'.")
+    if not path_to_output_iso_file.parent.is_dir():
+        raise NotADirectoryError(f"No such directory: '{path_to_output_iso_file.parent}'.")
+
+    if "~" in str(path_to_input_preseed_file):
+        path_to_input_preseed_file = Path(path_to_input_preseed_file).expanduser()
+    path_to_input_preseed_file = Path(path_to_input_preseed_file).resolve()
+    if not path_to_input_preseed_file.is_file():
+        raise FileNotFoundError(f"No such file: '{path_to_input_preseed_file}'.")
+
+    if printer is None:
+        p = Printer()
+    else:
+        if not isinstance(printer, Printer):
+            raise TypeError(f"Expected a {type(Printer)} object.")
+        p = printer
+
+    # extract image file to a temporary directory
+    temp_extracted_iso_dir = TemporaryDirectory()
+    path_to_extracted_iso_dir = Path(temp_extracted_iso_dir)
+    p.info(f"Extracting contents of {path_to_input_iso_file.name}...")
+    extract_iso(
+        path_to_extracted_iso_dir,
+        path_to_input_iso_file
+    )
+    p.ok("ISO extraction complete.")
+
+    # extract ISO MBR into a temporary directory
+    p.info(f"Extracting MBR from {path_to_input_iso_file.name}...")
+    temp_mbr_dir = TemporaryDirectory()
+    path_to_mbr_dir = Path(temp_mbr_dir)
+    path_to_mbr_file = path_to_mbr_dir/"mbr.bin"
+    modiso.extract_mbr_from_iso(
+        path_to_mbr_file,
+        path_to_input_iso_file,
+    )
+    p.ok("MBR extraction complete.")
+
+    # create a correctly named copy of the input preseed file and append it
+    # to the extracted ISO's initrd
+    p.info(f"Appending {path_to_input_preseed_file.name} to initrd...")
+    temp_preseed_dir = TemporaryDirectory()
+    path_to_preseed_dir = Path(temp_preseed_dir)
+    path_to_preseed_file = path_to_preseed_dir/"preseed.cfg"
+    shutil.copy(path_to_input_preseed_file, path_to_preseed_file)
+    append_file_contents_to_initrd_archive(
+        path_to_extracted_iso_dir/"install.amd"/"initrd.gz",
+        path_to_preseed_file
+    )
+    p.ok("Preseed file appended successfully.")
+
+    # regenerate extracted ISO's md5sum.txt file
+    p.info("Regenerating MD5 checksums...")
+    regenerate_iso_md5sums_file(path_to_extracted_iso_dir)
+    p.ok("MD5 calculations complete.")
+
+    # repack exctracted ISO into a single file
+    p.info("Repacking ISO...")
+    modiso.repack_iso(
+        path_to_output_iso_file,
+        path_to_mbr_file,
+        path_to_extracted_iso_dir,
+        iso_filesystem_name
+    )
+    p.success(f"ISO file was created successfully at '{path_to_output_iso_file}'.")
+
+    # clear out temporary directories
+    temp_preseed_dir.cleanup()
+    temp_mbr_dir.cleanup()
+    temp_extracted_iso_dir.cleanup()
