@@ -13,6 +13,7 @@ def get_argument_parser():
     # add mutually exclusive optional arguments to top-level parser
     mainparser_group = mainparser.add_mutually_exclusive_group()
     mainparser_group.add_argument(
+        "-o",
         "--output-file",
         action='store',
         type=str,
@@ -21,6 +22,7 @@ def get_argument_parser():
         help="File as which the retrieved/generated file will be saved",
     )
     mainparser_group.add_argument(
+        "-O",
         "--output-dir",
         action='store',
         type=str,
@@ -67,6 +69,7 @@ def get_argument_parser():
         help="Path to the preseed file you want to inject",
     )
     subparser_inject.add_argument(
+        "-i",
         "--image-file",
         action='store',
         type=str,

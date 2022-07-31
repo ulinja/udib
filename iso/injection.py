@@ -8,15 +8,15 @@ local filesystem.
 """
 
 from pathlib import Path
+from tempfile import TemporaryDirectory
 import gzip
 import hashlib
 import re
 import shutil
 import subprocess
-from tempfile import TemporaryDirectory
 
-from core.utils import find_all_files_under
 from cli.clibella import Printer
+from core.utils import find_all_files_under
 
 
 def extract_iso(path_to_output_dir, path_to_input_file):
@@ -471,7 +471,7 @@ def inject_preseed_file_into_iso(
 
     # extract image file to a temporary directory
     temp_extracted_iso_dir = TemporaryDirectory()
-    path_to_extracted_iso_dir = Path(temp_extracted_iso_dir)
+    path_to_extracted_iso_dir = Path(temp_extracted_iso_dir.name)
     p.info(f"Extracting contents of {path_to_input_iso_file.name}...")
     extract_iso(
         path_to_extracted_iso_dir,
@@ -482,9 +482,9 @@ def inject_preseed_file_into_iso(
     # extract ISO MBR into a temporary directory
     p.info(f"Extracting MBR from {path_to_input_iso_file.name}...")
     temp_mbr_dir = TemporaryDirectory()
-    path_to_mbr_dir = Path(temp_mbr_dir)
+    path_to_mbr_dir = Path(temp_mbr_dir.name)
     path_to_mbr_file = path_to_mbr_dir/"mbr.bin"
-    modiso.extract_mbr_from_iso(
+    extract_mbr_from_iso(
         path_to_mbr_file,
         path_to_input_iso_file,
     )
@@ -494,7 +494,7 @@ def inject_preseed_file_into_iso(
     # to the extracted ISO's initrd
     p.info(f"Appending {path_to_input_preseed_file.name} to initrd...")
     temp_preseed_dir = TemporaryDirectory()
-    path_to_preseed_dir = Path(temp_preseed_dir)
+    path_to_preseed_dir = Path(temp_preseed_dir.name)
     path_to_preseed_file = path_to_preseed_dir/"preseed.cfg"
     shutil.copy(path_to_input_preseed_file, path_to_preseed_file)
     append_file_contents_to_initrd_archive(
@@ -510,7 +510,7 @@ def inject_preseed_file_into_iso(
 
     # repack exctracted ISO into a single file
     p.info("Repacking ISO...")
-    modiso.repack_iso(
+    repack_iso(
         path_to_output_iso_file,
         path_to_mbr_file,
         path_to_extracted_iso_dir,

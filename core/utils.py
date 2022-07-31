@@ -12,7 +12,31 @@ from net.scrape import get_debian_iso_urls
 from gpg.verify import assert_detached_signature_is_valid
 from gpg.exceptions import VerificationFailedError
 from gpg.keystore import debian_signing_key_is_imported, import_debian_signing_key
+from crypt import crypt, METHOD_SHA512
+from getpass import getpass
 
+
+def hash_user_password(printer=None):
+    """Prompts for a password and prints the resulting hash.
+
+    The resulting hash can be added to the preseed file to set a user password:
+    d-i passwd/root-password-crypted PASSWORDHASH
+    """
+
+    if printer is None:
+        p = Printer()
+    else:
+        if not isinstance(printer, Printer):
+            raise TypeError(f"Expected a {type(Printer)} object.")
+
+    password = getpass("Enter a password: ")
+    password_confirmed = getpass("Enter the password again: ")
+    if not password_confirmed == password:
+        p.failure("Passwords did not match")
+        return
+
+    p.info("Password hash:")
+    p.info(crypt(password, crypt.METHOD_SHA512))
 
 def find_all_files_under(parent_dir):
     """Recursively finds all files anywhere under the specified directory.
@@ -31,7 +55,7 @@ def find_all_files_under(parent_dir):
 
     Examples
     --------
-    config_files = _find_all_files_under("~/.config")
+    config_files = find_all_files_under("~/.config")
 
     """
 
@@ -48,7 +72,7 @@ def find_all_files_under(parent_dir):
         if subpath.is_file():
             files.append(subpath.resolve())
         elif not subpath.is_symlink() and subpath.is_dir():
-            files += _find_all_files_under(subpath)
+            files += find_all_files_under(subpath)
 
     return files
 

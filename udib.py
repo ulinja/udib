@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 """Main entry point for the interactive udib CLI tool."""
 
-from sys import exit
 from pathlib import Path
+from sys import exit
 from tempfile import TemporaryDirectory
 
-from cli.parser import get_argument_parser
 from cli.clibella import Printer
-from net.scrape import get_debian_preseed_file_urls, get_debian_iso_urls
-from net.download import download_file
+from cli.parser import get_argument_parser
 from core.utils import download_and_verify_debian_iso
+from iso.injection import inject_preseed_file_into_iso
+from net.download import download_file
+from net.scrape import get_debian_preseed_file_urls, get_debian_iso_urls
 
 
 def main():
@@ -54,7 +55,7 @@ def main():
         path_to_output_dir = None
 
     if args.subparser_name == "get":
-        if args.what == "preseed-file-basic":
+        if args.WHAT == "preseed-file-basic":
             # download the basic example preseedfile
 
             if not path_to_output_file:
@@ -68,7 +69,7 @@ def main():
             download_file(
                 path_to_output_file,
                 get_debian_preseed_file_urls()["basic"]["url"],
-                show_progress=True,
+                show_progress=False,
                 printer=p,
             )
             p.success(
@@ -76,7 +77,7 @@ def main():
             )
             exit(0)
 
-        elif args.what == "preseed-file-full":
+        elif args.WHAT == "preseed-file-full":
             # download the full example preseedfile
 
             if not path_to_output_file:
@@ -90,7 +91,7 @@ def main():
             download_file(
                 path_to_output_file,
                 get_debian_preseed_file_urls()["full"]["url"],
-                show_progress=True,
+                show_progress=False,
                 printer=p,
             )
             p.success(
@@ -98,7 +99,7 @@ def main():
             )
             exit(0)
 
-        elif args.what == "iso":
+        elif args.WHAT == "iso":
             # download and verify installation image
             p.info("Downloading latest Debian stable x86-64 netinst ISO...")
 
@@ -143,8 +144,9 @@ def main():
                 exit(1)
         else:
             # download a Debian ISO to a temporary directory
+            p.info("Downloading the latest Debian x86-64 netinst image...")
             temp_iso_dir = TemporaryDirectory()
-            path_to_iso_dir = Path(temp_iso_dir)
+            path_to_iso_dir = Path(temp_iso_dir.name)
             path_to_image_file = path_to_iso_dir/image_file_name
             download_and_verify_debian_iso(path_to_image_file, printer=p)
 
