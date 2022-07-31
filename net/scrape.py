@@ -1,81 +1,76 @@
-"""Library for downloading files from the web.
+"""Methods for scraping the debian website for specific file URLs."""
 
-Specifically, debian installation images and any accompanying files
-required for verification of authenticity and integrity of the
-obtained images.
-
-"""
-
-import os
-import re
-import subprocess
-from pathlib import Path
+from re import compile
 
 import requests
 from bs4 import BeautifulSoup
-from tqdm import tqdm
-
-import clibella
-import gpgverify
 
 
-p = clibella.Printer()
+def get_debian_iso_urls():
+    """Retrieves a dict containing the URLs for a debian installation image.
 
+    The dict has the following structure:
+    {
+        "image_file":
+            "url": "https://...",
+            "name": "debian-xx.x.x-amd64-netinst.iso",
+        "hash_file":
+            "url": "https://...",
+            "name": "SHA512SUMS",
+        "signature_file":
+            "url": "https://...",
+            "name": "SHA512SUMS.sign",
+    }
+    where "image_file" is points to the latest debian stable x86-64bit
+    net-installation ISO image, "hash_file" points to a SHA512SUMS file
+    containing the SHA512 checksum for the ISO file, and "signature_file"
+    points to a file containing a PGP signature for verification of the
+    SHA512SUMS file.
+    Each top-level dict entry contains a "name" key representing a file name,
+    and a "url" key specifying a URL to that file.
 
-def download_file(path_to_output_file, url_to_file, show_progress=False):
-    """Downloads the file at the input URL to the specified path.
-
-    The file is downloaded via HTTP/HTTPS and saved to the specified path.
-    Optionally, displays a nice status bar.
-
-    Parameters
-    ----------
-    path_to_output_file : str or pathlike object
-        Path to a file as which the downloaded file is saved.
-    url_to_file : str
-        URL to the file to be downloaded.
-    show_progress : bool
-        When True, a progress bar is displayed on StdOut indicating the
-        progress of the download.
+    The function scrapes the official debian.org website to retrieve the URLs.
     """
 
-    path_to_output_file = Path(path_to_output_file).resolve()
-    if not path_to_output_file.parent.is_dir():
-        raise FileNotFoundError(
-            f"No such directory: '{path_to_output_file.parent}'."
+    # request the debian releases page
+    releases_url = "https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/"
+    releases_page = requests.get(releases_url)
+    if not releases_page.status_code == 200:
+        raise RuntimeError("Unexpected status code during request.")
+
+    hash_file_name = "SHA512SUMS"
+    hash_file_url = releases_url + hash_file_name
+    signature_file_name = "SHA512SUMS.sign"
+    signature_file_url = releases_url + signature_file_name
+
+    # find the exact URL to the latest stable x64 netinst ISO file
+    soup = BeautifulSoup(releases_page.content, "html.parser")
+    image_file_links = soup.find_all(
+        name="a",
+        string=compile(r"debian-[0-9.]*-amd64-netinst.iso")
+    )
+    if len(image_file_links) != 1:
+        raise RuntimeError(
+            "Failed to find an exact match while looking for "
+            "a link to the latest debian image file."
         )
-    if path_to_output_file.exists():
-        raise FileExistsError(
-            f"File already exists: '{path_to_output_file}'"
-        )
+    image_file_name = image_file_links[0]['href']
+    image_file_url = releases_url + image_file_name
 
-    output_file_name = path_to_output_file.name
-    with open(path_to_output_file, "wb") as output_file:
-        p.info(f"Downloading '{output_file_name}'...")
-        file_response = requests.get(url_to_file, stream=True)
-        total_length = file_response.headers.get('content-length')
-
-        if total_length is None:  # no content length header
-            output_file.write(file_response.content)
-        else:
-            if (show_progress):
-                total_length = int(total_length)
-                progress_bar = tqdm(
-                    total=total_length,
-                    unit="B",
-                    unit_scale=True,
-                    unit_divisor=1024
-                )
-
-            for data in file_response.iter_content(chunk_size=4096):
-                output_file.write(data)
-                if (show_progress):
-                    progress_bar.update(len(data))
-
-            if (show_progress):
-                progress_bar.close()
-
-        p.ok(f"Received '{output_file_name}'.")
+    return {
+        "image_file": {
+            "url": image_file_url,
+            "name": image_file_name,
+        },
+        "hash_file": {
+            "url": hash_file_url,
+            "name": hash_file_name,
+        },
+        "signature_file": {
+            "url": signature_file_url,
+            "name": signature_file_name,
+        },
+    }
 
 
 def debian_obtain_image(path_to_output_dir):
