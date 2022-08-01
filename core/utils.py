@@ -9,7 +9,7 @@ from sys import exit
 from tempfile import TemporaryDirectory
 
 from cli.clibella import Printer
-from exceptions import MissingDependencyError
+from core.exceptions import MissingDependencyError
 from gpg.exceptions import VerificationFailedError
 from gpg.keystore import debian_signing_key_is_imported, import_debian_signing_key
 from gpg.verify import assert_detached_signature_is_valid
