@@ -7,7 +7,7 @@ from tempfile import TemporaryDirectory
 
 from cli.clibella import Printer
 from cli.parser import get_argument_parser
-from core.utils import download_and_verify_debian_iso
+from core.utils import assert_system_dependencies_installed, download_and_verify_debian_iso
 from iso.injection import inject_preseed_file_into_iso
 from net.download import download_file
 from net.scrape import get_debian_preseed_file_urls, get_debian_iso_urls
@@ -15,9 +15,10 @@ from net.scrape import get_debian_preseed_file_urls, get_debian_iso_urls
 
 def main():
 
+    # check for dependencies
+    assert_system_dependencies_installed()
     # create a CLI printer
     p = Printer()
-
     # create an argument parser and read arguments
     parser = get_argument_parser()
     args = parser.parse_args()

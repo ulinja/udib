@@ -1,19 +1,20 @@
 """A collection of general utilities, not specific to any module."""
 
-from pathlib import Path
-from tempfile import TemporaryDirectory
-from sys import exit
-from os import remove, rename
-from subprocess import run, STDOUT, PIPE
-
-from cli.clibella import Printer
-from net.download import download_file
-from net.scrape import get_debian_iso_urls
-from gpg.verify import assert_detached_signature_is_valid
-from gpg.exceptions import VerificationFailedError
-from gpg.keystore import debian_signing_key_is_imported, import_debian_signing_key
 from crypt import crypt, METHOD_SHA512
 from getpass import getpass
+from os import remove, rename
+from pathlib import Path
+from subprocess import run, STDOUT, PIPE
+from sys import exit
+from tempfile import TemporaryDirectory
+
+from cli.clibella import Printer
+from exceptions import MissingDependencyError
+from gpg.exceptions import VerificationFailedError
+from gpg.keystore import debian_signing_key_is_imported, import_debian_signing_key
+from gpg.verify import assert_detached_signature_is_valid
+from net.download import download_file
+from net.scrape import get_debian_iso_urls
 
 
 def hash_user_password(printer=None):
@@ -37,6 +38,31 @@ def hash_user_password(printer=None):
 
     p.info("Password hash:")
     p.info(crypt(password, crypt.METHOD_SHA512))
+
+def assert_system_dependencies_installed():
+    """Checks whether all system dependencies required by udib are installed.
+
+    The programs used by udib must be accessible within the system's PATH
+    environment variable.
+
+    Raises
+    ------
+    MissingDependencyError
+        If a required dependency is not installed.
+    """
+
+    _REQUIRED_PROGRAMS = [
+        "xorriso", "gpg", "cpio", "sha512sum",
+    ]
+
+    for program in _REQUIRED_PROGRAMS:
+        try:
+            run(["command", "-v", program], shell=True, check=True)
+        except subprocess.CalledProcessError:
+            raise MissingDependencyError(
+                f"Program not installed or not in $PATH: "
+                f"'{program}'."
+            )
 
 def find_all_files_under(parent_dir):
     """Recursively finds all files anywhere under the specified directory.
