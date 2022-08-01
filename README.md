@@ -4,6 +4,27 @@ UDIB is the Unattended Debian Installation Builder.
 It provides a handy commandline utility for creating preseeded Debian installation ISOs.
 Preseeded ISOs allow partially or fully automated Debian installations on bare metal (or anywhere else).
 
+## Quick Start Guide
+
+This short guide explains how to build a Debian ISO with a customized and automated installation:
+
+1. make sure you have all the [required software](#build-machine) installed
+2. clone this repo and `cd` into your local copy
+3. (optional) create and activate a virtual environment: `python3 -m venv .venv && . .venv/bin/activate`
+4. install the required python packages: `pip install --user -r requirements.txt`
+5. get an example preseed file: `./udib.py -o my-preseed.cfg get preseed-file-basic`
+6. customize your installation by editing `my-preseed.cfg` (the comments are pretty self-explanatory)
+7. create a Debian ISO with your preseed file: `./udib.py -o my-image.iso inject my-preseed.cfg`
+8. boot from your newly created ISO `my-image.iso` on your target machine (or in a VM)
+9. in the Debian installer menu, navigate to *Advanced options > Automated install*
+10. drink some coffee
+11. return to your new Debian system
+
+Depending on how many answers you provided in the preseed file, the installation may require some manual interaction.
+Preseed files are very powerful, and if you need more customization you can have a deeper look into [how they work](#whats-preseeding).
+You can also use UDIB to get the full preseed example file: `./udib.py get preseed-file-full` and use that as a starting point.
+Be sure to have a look at the [usage reference](#detailed-usage-guide) for a closer look at UDIB itself.
+
 ## What's preseeding?
 
 A preseed file is a text file which provides the Debian installer with previously set (preseeded) answers during the installation process.
@@ -42,28 +63,8 @@ Using UDIB to create ISOs requires the following software:
 - `gpg` *(2.2.32 known to work)*
 - GNU `cpio`
   - preinstalled on most distributions
-  
+
 Internet access is (obviously) required if you want to fetch any files using UDIB.
-
-# Quick Start Guide
-
-This short guide explains how to build a Debian ISO with a customized and automated installation:
-
-1. make sure you have all the [required software](#build-machine) installed
-2. clone this repo and `cd` into your local copy
-3. (optional) create and activate a virtual environment: `python3 -m venv .venv && . .venv/bin/activate`
-4. install the required python packages: `pip install --user -r requirements.txt`
-5. get an example preseed file: `./udib.py -o my-preseed.cfg get preseed-file-basic`
-6. customize your installation by editing `my-preseed.cfg` (the comments are pretty self-explanatory)
-7. create a Debian ISO with your preseed file: `./udib.py -o my-image.iso inject my-preseed.cfg`
-8. boot from your newly created ISO `my-image.iso` on your target machine (or in a VM)
-9. in the Debian installer menu, navigate to *Advanced options > Automated install*
-10. drink some coffee
-11. return to your new Debian system
-
-Depending on how many answers you provided in the preseed file, the installation may require some manual interaction.
-Preseed files are very powerful, and if you need more customization you can have a deeper look into [how they work](#whats-preseeding).
-You can also use UDIB to get the full preseed example file: `./udib.py get preseed-file-full` and use that as a starting point.
 
 # Detailed usage guide
 
