@@ -60,7 +60,8 @@ Using UDIB to create ISOs requires the following software:
 - `xorriso` *(1.5.4 known to work)*
   - **Debian (bullseye):** [xorriso](https://packages.debian.org/bullseye/xorriso)
   - **Arch Linux:** [extra/libisoburn](extra/libisoburn)
-- `gpg` *(2.2.32 known to work)*
+- GNU `gpg` *(2.2.32 known to work)*
+  - preinstalled on most distributions
 - GNU `cpio`
   - preinstalled on most distributions
 
