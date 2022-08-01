@@ -29,11 +29,8 @@ def main():
             path_to_output_file = path_to_output_file.expanduser()
         path_to_output_file = path_to_output_file.resolve()
 
-        if path_to_output_file.is_file():
+        if path_to_output_file.exists():
             p.error(f"Output file already exists: '{path_to_output_file}'.")
-            exit(1)
-        if path_to_output_file.is_dir():
-            p.error(f"Output file is a directory: '{path_to_output_file}'.")
             exit(1)
     else:
         path_to_output_file = None
@@ -45,11 +42,8 @@ def main():
             path_to_output_dir = path_to_output_dir.expanduser()
         path_to_output_dir = path_to_output_dir.resolve()
 
-        if not path_to_output_file.is_dir():
-            p.error(f"No such directory: '{path_to_output_file}'.")
-            exit(1)
-        if path_to_output_file.is_file():
-            p.error(f"Output dir is a file: '{path_to_output_file}'.")
+        if not path_to_output_dir.is_dir():
+            p.error(f"No such directory: '{path_to_output_dir}'.")
             exit(1)
     else:
         path_to_output_dir = None
