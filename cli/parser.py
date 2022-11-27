@@ -62,11 +62,12 @@ def get_argument_parser():
 
     # register arguments for the 'inject' subcommand
     subparser_inject.add_argument(
-        "PRESEEDFILE",
+        "FILES",
         action='store',
         type=str,
-        metavar='PRESEEDFILE',
-        help="Path to the preseed file you want to inject",
+        nargs='+',
+        metavar='FILES',
+        help="Paths to all input files you want to inject",
     )
     subparser_inject.add_argument(
         "-i",

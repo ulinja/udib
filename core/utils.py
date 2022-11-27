@@ -37,7 +37,7 @@ def hash_user_password(printer=None):
         return
 
     p.info("Password hash:")
-    p.info(crypt(password, crypt.METHOD_SHA512))
+    p.info(crypt(password, METHOD_SHA512))
 
 def assert_system_dependencies_installed():
     """Checks whether all system dependencies required by udib are installed.

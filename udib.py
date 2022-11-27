@@ -8,7 +8,7 @@ from tempfile import TemporaryDirectory
 from cli.clibella import Printer
 from cli.parser import get_argument_parser
 from core.utils import assert_system_dependencies_installed, download_and_verify_debian_iso
-from iso.injection import inject_preseed_file_into_iso
+from iso.injection import inject_files_into_iso
 from net.download import download_file
 from net.scrape import get_debian_preseed_file_urls, get_debian_iso_urls
 
@@ -112,20 +112,23 @@ def main():
     elif args.subparser_name == "inject":
         image_file_name = Path(get_debian_iso_urls()["image_file"]["name"])
         if not path_to_output_file:
-            output_file_name = image_file_name.stem + "-preseeded" + image_file_name.suffix
+            output_file_name = image_file_name.stem + "-modified" + image_file_name.suffix
             if path_to_output_dir:
                 path_to_output_file = path_to_output_dir / output_file_name
             else:
                 path_to_output_file = Path.cwd() / output_file_name
 
-        # verify preseed file path
-        path_to_preseed_file = Path(args.PRESEEDFILE)
-        if "~" in str(path_to_preseed_file):
-            path_to_preseed_file = Path(path_to_preseed_file).expanduser()
-        path_to_preseed_file = Path(path_to_preseed_file).resolve()
-        if not path_to_preseed_file.is_file():
-            p.error(f"No such file: '{path_to_preseed_file}'.")
-            exit(1)
+        # verify input file paths
+        input_file_paths = []
+        for path in args.FILES:
+            path = Path(path)
+            if "~" in str(path):
+                path = Path(path).expanduser()
+            path = Path(path).resolve()
+            if not path.is_file():
+                p.error(f"No such file: '{path}'.")
+                exit(1)
+            input_file_paths.append(path)
 
         # verify image file path if set by user or download fresh iso if unset
         temp_iso_dir = None
@@ -145,11 +148,11 @@ def main():
             path_to_image_file = path_to_iso_dir/image_file_name
             download_and_verify_debian_iso(path_to_image_file, printer=p)
 
-        # inject the preseed file
-        inject_preseed_file_into_iso(
+        # inject the input files
+        inject_files_into_iso(
             path_to_output_file,
             path_to_image_file,
-            path_to_preseed_file,
+            input_file_paths,
             printer=p,
         )
 

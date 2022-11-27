@@ -1,8 +1,9 @@
 # UDIB
 
 UDIB is the Unattended Debian Installation Builder.
-It provides a handy commandline utility for creating preseeded Debian installation ISOs.
-Preseeded ISOs allow partially or fully automated Debian installations on bare metal (or anywhere else).
+It provides a handy commandline utility for injecting files into Debian installation ISOs.
+Using UDIB, you can preseed an ISO by injecting a preseed file.
+Preseeded ISOs allow fully automated Debian installations on bare metal (or anywhere else).
 
 ## Quick Start Guide
 
@@ -12,9 +13,9 @@ This short guide explains how to build a Debian ISO with a customized and automa
 2. clone this repo and `cd` into your local copy
 3. (optional) create and activate a virtual environment: `python3 -m venv .venv && . .venv/bin/activate`
 4. install the required python packages: `pip install --user -r requirements.txt`
-5. get an example preseed file: `./udib.py -o my-preseed.cfg get preseed-file-basic`
-6. customize your installation by editing `my-preseed.cfg` (the comments are pretty self-explanatory)
-7. create a Debian ISO with your preseed file: `./udib.py -o my-image.iso inject my-preseed.cfg`
+5. download an example preseed file: `./udib.py -o preseed.cfg get preseed-file-basic`
+6. customize your installation by editing `preseed.cfg` (the comments are pretty self-explanatory)
+7. create a Debian ISO with your preseed file: `./udib.py -o my-image.iso inject preseed.cfg`
 8. boot from your newly created ISO `my-image.iso` on your target machine (or in a VM)
 9. in the Debian installer menu, navigate to *Advanced options > Automated install*
 10. drink some coffee
@@ -35,22 +36,11 @@ If you want to know more, you can have a look at Debian's [official guide](https
 
 ## How does UDIB work?
 
-UDIB's main purpose is the injection of preseed files into existing Debian installation ISOs.
-In a nutshell, it does this by extracting the ISO, adding the preseed file to it, and repacking the ISO again.
+UDIB's main purpose is the injection files into existing Debian installation ISOs.
+In a nutshell, it does this by extracting the ISO, adding the files to the ISO's initrd, and repacking the ISO again.
 You could do all of this manually of course by following the [basic](https://wiki.debian.org/DebianInstaller/Preseed/EditIso#Adding_a_Preseed_File_to_the_Initrd) and [advanced](https://wiki.debian.org/RepackBootableISO) guides for ISO repacking on the Debian wiki, but UDIB does all of this for you.
 
 # Dependencies
-
-UDIB has some hard- and software requirements, both regarding the [target machine](#target-machine) for which it can build ISOs, as well as on the [build machine](#build-machine) on which UDIB is run.
-
-## Target Machine
-
-Images built using UDIB can be used to install Debian on systems satisfying these requirements:
-
-- **CPU Architecture:** x86 (64-Bit)
-- **Network:** an ethernet connection with internet access
-
-## Build Machine
 
 Using UDIB to create ISOs requires the following software:
 
@@ -90,13 +80,15 @@ udib.py [--output-file FILE | --output-dir DIR] get WHAT
 - `preseed-file-full` to download Debian's full example preseed file (has a LOT of customization options)
 - `iso` to download the latest, unmodified Debian stable x86-64 netinst ISO
 
-## Creating a preseeded ISO
+## Injecting files into an ISO
 
-To inject an existing preseed file into an ISO, you can run the following command:
+To inject existing files into an ISO, you can run the following command:
 
 ```
-udib.py [--output-file FILE | --output-dir DIR] inject PRESEEDFILE [--image-file IMAGEFILE]
+udib.py [--output-file FILE | --output-dir DIR] inject [--image-file IMAGEFILE] FILE [FILE ...]
 ```
 
-where `PRESEEDFILE` is the path to your preseed file.
-If you don't specify an `--image-file`, UDIB will download the latest Debian x86-64 netinst ISO and inject your `PRESEEDFILE` into it.
+where `FILE` is the path to the file you want to inject.
+Injected files are added at the root of the installer's filesystem and can be accessed there during the installation.
+**NOTE:** the installer will not recognize a preseed file unless it's filename is `preseed.cfg` exactly.
+If you don't specify an `--image-file`, UDIB will download the latest Debian x86-64 netinst ISO and inject your `FILE`s into it.
